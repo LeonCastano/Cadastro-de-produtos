@@ -33,7 +33,22 @@
     </style>
 </head>
 <body>
-
+    <!-- Botão e barra lateral -->
+<div class="menu-container">
+    <button id="menu-btn" class="menu-btn">☰</button>
+    <div id="sidebar" class="sidebar">
+      <button id="close-btn" class="close-btn">×</button>
+      <ul>
+        <li><a href="#">Meu Perfil</a></li>
+        <li><a href="#">Fornecedores</a></li>
+        <li><a href="#">Histórico de Compras</a></li>
+        <li><a href="#">Cadastro de Produtos</a></li>
+        <li><a href="#">Minhas NFs</a></li>
+        <li><a href="#">Gerar NFs</a></li>
+      </ul>
+    </div>
+  </div>
+  
 <div class="container">
     <h2>Cadastro de Produtos</h2>
     <form id="produtoForm">
@@ -79,169 +94,176 @@
 </div>
 
 <script>
-    let produtos = [];
+// Selecionando os elementos
+const menuBtn = document.getElementById('menu-btn');
+const closeBtn = document.getElementById('close-btn');
+const sidebar = document.getElementById('sidebar');
 
-    function toggleForm(formId) {
-        const form = document.getElementById(formId);
-        form.classList.toggle('hidden');
+// Adiciona um evento de clique para alternar a barra lateral
+menuBtn.addEventListener('click', () => {
+  sidebar.style.left = '0'; // Traz o menu para dentro da tela
+});
+
+// Fechar o menu
+closeBtn.addEventListener('click', () => {
+  sidebar.style.left = '-250px'; // Move o menu para fora da tela
+});
+
+let produtos = [];
+
+function toggleForm(formId) {
+    const form = document.getElementById(formId);
+    form.classList.toggle('hidden');
+}
+
+document.getElementById('produtoForm').addEventListener('submit', async function(event) {
+    event.preventDefault();
+
+    const idProduto = document.getElementById('idProduto').value;
+    const nome = document.getElementById('nome').value;
+    const descricao = document.getElementById('descricao').value;
+    const preco = document.getElementById('preco').value;
+    const categoria = document.getElementById('categoria').value;
+
+    if (!idProduto || !nome || !descricao || !preco || !categoria) {
+        alert('Por favor, preencha todos os campos.');
+        return;
     }
 
-    document.getElementById('produtoForm').addEventListener('submit', async function(event) {
-        event.preventDefault();
+    const produtoExistente = produtos.find(produto => produto.idProduto == idProduto);
+    if (produtoExistente) {
+        mostrarPopup();
+        return;
+    }
 
-        const idProduto = document.getElementById('idProduto').value;
-        const nome = document.getElementById('nome').value;
-        const descricao = document.getElementById('descricao').value;
-        const preco = document.getElementById('preco').value;
-        const categoria = document.getElementById('categoria').value;
+    const produto = { idProduto, nome, descricao, preco, categoria };
+    produtos.push(produto);
 
-        if (!idProduto || !nome || !descricao || !preco || !categoria) {
-            alert('Por favor, preencha todos os campos.');
-            return;
+    await enviarProdutosComoJSON(); // Envia os dados para o servidor
+
+    alert('Produto cadastrado com sucesso!');
+    document.getElementById('produtoForm').reset();
+});
+
+function mostrarPopup() {
+    document.getElementById('popup').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+}
+
+function cadastrarNovoProduto() {
+    document.getElementById('produtoForm').reset();
+    document.getElementById('popup').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
+}
+
+async function enviarProdutosComoJSON() {
+    const url = "https://574f960e-c244-4355-8367-ccc07e18e71e-00-3ud78sen3fz.riker.replit.dev/produtos";
+
+    try {
+        const response = await fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(produtos)
+        });
+
+        if (!response.ok) {
+            throw new Error("Erro ao enviar os produtos.");
         }
 
-        const produtoExistente = produtos.find(produto => produto.idProduto == idProduto);
-        if (produtoExistente) {
-            mostrarPopup();
-            return;
+        console.log("Produtos enviados com sucesso!");
+    } catch (error) {
+        console.error("Erro ao enviar os dados:", error);
+    }
+}
+
+// Função para listar todos os produtos
+async function listarProdutos() {
+    const url = "https://574f960e-c244-4355-8367-ccc07e18e71e-00-3ud78sen3fz.riker.replit.dev/produtos";
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        console.log('Produtos:', data);
+    } catch (error) {
+        console.error('Erro ao listar os produtos:', error);
+    }
+}
+
+// Função para atualizar um produto
+async function atualizarProduto() {
+    const idProduto = document.getElementById('idProduto').value;
+    const nome = document.getElementById('nome').value;
+    const descricao = document.getElementById('descricao').value;
+    const preco = document.getElementById('preco').value;
+    const categoria = document.getElementById('categoria').value;
+
+    const produtoAtualizado = { nome, descricao, preco, categoria };
+
+    try {
+        const response = await fetch(`https://574f960e-c244-4355-8367-ccc07e18e71e-00-3ud78sen3fz.riker.replit.dev/produtos/${idProduto}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(produtoAtualizado)
+        });
+
+        if (response.ok) {
+            alert('Produto atualizado com sucesso!');
+        } else {
+            alert('Erro ao atualizar o produto!');
         }
-
-        const produto = { idProduto, nome, descricao, preco, categoria };
-        produtos.push(produto);
-
-        await enviarProdutosComoJSON(); // Envia os dados para o servidor
-
-        alert('Produto cadastrado com sucesso!');
-        document.getElementById('produtoForm').reset();
-    });
-
-    function mostrarPopup() {
-        document.getElementById('popup').style.display = 'block';
-        document.getElementById('overlay').style.display = 'block';
+    } catch (error) {
+        console.error("Erro ao atualizar o produto:", error);
     }
+}
 
-    function cadastrarNovoProduto() {
-        document.getElementById('produtoForm').reset();
-        document.getElementById('popup').style.display = 'none';
-        document.getElementById('overlay').style.display = 'none';
-    }
+// Função para excluir um produto
+async function excluirProduto() {
+    const idProduto = document.getElementById('idProduto').value;
 
-    const usuarios = 
-    {       
-        nome: nome,
-        descricao: descricao,
-        preco: preco,
-        categoria: categoria
-    }
+    try {
+        const response = await fetch(`https://574f960e-c244-4355-8367-ccc07e18e71e-00-3ud78sen3fz.riker.replit.dev/produtos/${idProduto}`, {
+            method: "DELETE"
+        });
 
-    async function enviarProdutosComoJSON() {
-        const url = "https://574f960e-c244-4355-8367-ccc07e18e71e-00-3ud78sen3fz.riker.replit.dev/produtos";
-
-        try {
-            const response = await fetch(url, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(produtos)
-            });
-
-            if (!response.ok) {
-                throw new Error("Erro ao enviar os produtos.");
-            }
-
-            console.log("Produtos enviados com sucesso!");
-        } catch (error) {
-            console.error("Erro ao enviar os dados:", error);
+        if (response.ok) {
+            alert('Produto excluído com sucesso!');
+        } else {
+            alert('Erro ao excluir o produto!');
         }
+    } catch (error) {
+        console.error("Erro ao excluir o produto:", error);
     }
+}
 
-    // Função para listar todos os produtos
-    async function listarProdutos() {
-        const url = "https://574f960e-c244-4355-8367-ccc07e18e71e-00-3ud78sen3fz.riker.replit.dev/produtos";
-        try {
-            const response = await fetch(url);
-            const data = await response.json();
-            console.log('Produtos:', data);
-        } catch (error) {
-            console.error('Erro ao listar os produtos:', error);
+// Função para atualizar parcialmente um produto (PATCH)
+async function atualizarParcialmenteProduto() {
+    const idProduto = document.getElementById('idProduto').value;
+    const nome = document.getElementById('nome').value;
+    const preco = document.getElementById('preco').value;
+
+    const dadosAtualizados = { nome, preco };
+
+    try {
+        const response = await fetch(`https://574f960e-c244-4355-8367-ccc07e18e71e-00-3ud78sen3fz.riker.replit.dev/produtos/${idProduto}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(dadosAtualizados)
+        });
+
+        if (response.ok) {
+            alert('Produto atualizado parcialmente com sucesso!');
+        } else {
+            alert('Erro ao atualizar parcialmente o produto!');
         }
+    } catch (error) {
+        console.error("Erro ao atualizar parcialmente o produto:", error);
     }
-
-    // Função para atualizar um produto
-    async function atualizarProduto() {
-        const idProduto = document.getElementById('idProduto').value;
-        const nome = document.getElementById('nome').value;
-        const descricao = document.getElementById('descricao').value;
-        const preco = document.getElementById('preco').value;
-        const categoria = document.getElementById('categoria').value;
-
-        const produtoAtualizado = { nome, descricao, preco, categoria };
-
-        try {
-            const response = await fetch(`https://574f960e-c244-4355-8367-ccc07e18e71e-00-3ud78sen3fz.riker.replit.dev/produtos/${idProduto}`, {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(produtoAtualizado)
-            });
-
-            if (response.ok) {
-                alert('Produto atualizado com sucesso!');
-            } else {
-                alert('Erro ao atualizar o produto!');
-            }
-        } catch (error) {
-            console.error("Erro ao atualizar o produto:", error);
-        }
-    }
-
-    // Função para excluir um produto
-    async function excluirProduto() {
-        const idProduto = document.getElementById('idProduto').value;
-
-        try {
-            const response = await fetch(`https://574f960e-c244-4355-8367-ccc07e18e71e-00-3ud78sen3fz.riker.replit.dev/produtos/${idProduto}`, {
-                method: "DELETE"
-            });
-
-            if (response.ok) {
-                alert('Produto excluído com sucesso!');
-            } else {
-                alert('Erro ao excluir o produto!');
-            }
-        } catch (error) {
-            console.error("Erro ao excluir o produto:", error);
-        }
-    }
-
-    // Função para atualizar parcialmente um produto (PATCH)
-    async function atualizarParcialmenteProduto() {
-        const idProduto = document.getElementById('idProduto').value;
-        const nome = document.getElementById('nome').value;
-
-        const produtoAtualizadoParcial = { nome };
-
-        try {
-            const response = await fetch(`https://574f960e-c244-4355-8367-ccc07e18e71e-00-3ud78sen3fz.riker.replit.dev/produtos/${idProduto}`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(produtoAtualizadoParcial)
-            });
-
-            if (response.ok) {
-                alert('Produto parcialmente atualizado com sucesso!');
-            } else {
-                alert('Erro ao atualizar parcialmente o produto!');
-            }
-        } catch (error) {
-            console.error("Erro ao atualizar parcialmente o produto:", error);
-        }
-    }
+}
 </script>
-
 </body>
 </html>
